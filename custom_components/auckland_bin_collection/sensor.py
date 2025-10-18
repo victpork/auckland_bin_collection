@@ -5,7 +5,7 @@ import logging
 from typing import Any
 
 from bs4 import BeautifulSoup
-from homeassistant.components.sensor import SensorEntity
+from homeassistant.components.sensor import SensorEntity, SensorDeviceClass
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
@@ -162,6 +162,10 @@ class AucklandBinCollection(SensorEntity):
             "food scraps": "true" if "Food scraps" in data[date] else "false",
             "query_url": f"{URL_REQUEST}{self._location_id}",
         }
+
+    @property
+    def device_class(self) -> SensorDeviceClass:
+        return SensorDeviceClass.DATE
 
     async def async_update(self):
         """Handle data update."""
