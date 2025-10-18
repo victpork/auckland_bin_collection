@@ -12,7 +12,7 @@ from custom_components.auckland_bin_collection.sensor import (
 )
 
 TEST_LOC = "12345678901"
-TEST_UPCOMING_DATE_STR = "Tuesday 12 January"
+TEST_UPCOMING_DATE_STR = "Tuesday, 12 January"
 TEST_UPCOMING_TYPE_STR = ["Rubbish", "Food scraps"]
 TEST_UPCOMING_DATE = date(2023, 1, 12)
 TEST_UPCOMING_RUBBISH = "true"
@@ -24,10 +24,10 @@ TEST_UPCOMING_ATTRS = {
     "rubbish": TEST_UPCOMING_RUBBISH,
     "recycle": TEST_UPCOMING_RECYCLE,
     "food scraps": TEST_UPCOMING_FOODSCRAPS,
-    "query_url": f"{URL_REQUEST}{TEST_LOC}",
+    "query_url": f"{URL_REQUEST}{TEST_LOC}.html",
 }
 
-TEST_NEXT_DATE_STR = "Friday 25 March"
+TEST_NEXT_DATE_STR = "Friday, 25 March"
 TEST_NEXT_TYPE_STR = ["Rubbish", "Recycling"]
 TEST_NEXT_DATE = date(2023, 3, 25)
 TEST_NEXT_RUBBISH = "true"
@@ -39,7 +39,7 @@ TEST_NEXT_ATTRS = {
     "rubbish": TEST_NEXT_RUBBISH,
     "recycle": TEST_NEXT_RECYCLE,
     "food scraps": TEST_NEXT_FOODSCRAPS,
-    "query_url": f"{URL_REQUEST}{TEST_LOC}",
+    "query_url": f"{URL_REQUEST}{TEST_LOC}.html",
 }
 
 TEST_COORDINATOR_DATA = [
@@ -52,7 +52,7 @@ TEST_COORDINATOR_DATA = [
 def test_get_date_from_str_general():
     """General passing case."""
 
-    result = get_date_from_str("Monday 3 April")
+    result = get_date_from_str("Monday, 3 April")
     assert isinstance(result, date)
     assert result == date(year=2023, month=4, day=3)
 
@@ -61,7 +61,7 @@ def test_get_date_from_str_general():
 def test_get_date_from_str_next_year():
     """Date of next year."""
 
-    result = get_date_from_str("Tuesday 2 January")
+    result = get_date_from_str("Tuesday, 2 January")
     assert isinstance(result, date)
     assert result == date(year=2024, month=1, day=2)
 
