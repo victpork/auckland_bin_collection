@@ -5,7 +5,7 @@ import logging
 from typing import Any
 
 from bs4 import BeautifulSoup
-from homeassistant.components.sensor import SensorEntity
+from homeassistant.components.sensor import SensorEntity, SensorDeviceClass
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
@@ -20,14 +20,14 @@ _LOGGER = logging.getLogger(__name__)
 
 KEY_DATE = "date"
 KEY_TYPE = "type"
-URL_REQUEST = "https://www.aucklandcouncil.govt.nz/rubbish-recycling/rubbish-recycling-collections/Pages/collection-day-detail.aspx?an="
+URL_REQUEST = "https://new.aucklandcouncil.govt.nz/en/rubbish-recycling/rubbish-recycling-collections/rubbish-recycling-collection-days/"
 
 
 def get_date_from_str(date_str: str) -> datetime.date:
     """Convert a date string to date object"""
 
     try:
-        input_date = datetime.strptime(date_str, "%A %d %B")
+        input_date = datetime.strptime(date_str, "%A, %d %B")
     except ValueError:
         _LOGGER.error("Invalid input date string")
         return None
@@ -46,25 +46,27 @@ def get_date_from_str(date_str: str) -> datetime.date:
 async def async_get_bin_dates(hass: HomeAssistant, location_id: str):
     """Async method to get data from Auckland Council webpage."""
 
-    url = f"{URL_REQUEST}{location_id}"
+    url = f"{URL_REQUEST}{location_id}.html"
     response = await hass.async_add_executor_job(requests.get, url)
 
     if response.status_code != 200:
         raise Exception(f"Failed to fetch page: {response.status_code}")
 
     soup = BeautifulSoup(response.text, "html.parser")
-    household = soup.find_all("div", {"id": lambda x: x and "HouseholdBlock2" in x})
+    schedules = soup.find_all("div", {"class": "acpl-schedule-card"})
 
-    if not household:
+    if not schedules:
         raise ValueError("Data with location ID not found")
 
     extracted_data = []
-    # We can assume only one Household Block
-    for date_block in household[0].find_all("h5", {"class": "collectionDayDate"}):
-        collect_type = date_block.find("span").find_next_sibling(string=True).strip().rstrip(':')
-        collect_date = date_block.find("strong")
-        if collect_date and collect_type:
-            extracted_data.append((collect_date.text, collect_type))
+    # We can assume first block is the household schedule
+    for date_block in schedules[0].find_all("span", {"class": "acpl-icon-with-attribute left"}):
+        date_field = date_block.find("span", {"class", ""})
+        if date_field:
+            collect_type = date_field.contents[0].strip().rstrip(':')
+            collect_date = date_field.find("b").string
+            if collect_date and collect_type:
+                extracted_data.append((collect_date.text, collect_type))
 
     if not extracted_data:
         raise ValueError("Cannot retrieve bin dates")
@@ -160,6 +162,10 @@ class AucklandBinCollection(SensorEntity):
             "food scraps": "true" if "Food scraps" in data[date] else "false",
             "query_url": f"{URL_REQUEST}{self._location_id}",
         }
+
+    @property
+    def device_class(self) -> SensorDeviceClass:
+        return SensorDeviceClass.DATE
 
     async def async_update(self):
         """Handle data update."""
